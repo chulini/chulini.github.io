@@ -1,0 +1,635 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<meta name="google-site-verification" content="VrJ_5sbiz02gK5WqwfSLQ8V2XP4T2R1Zn0frzu90R7w" />
+<link rel="icon" href="/images/icon2-64.png" type="image/x-icon" />
+
+<link rel="stylesheet" href="/css/reset.css">
+
+
+    <title>BlockPaint</title>
+    <script src="/js/zdog.dist.min.js"></script>
+    <script src="/js/zfont.min.js"></script>
+    <script src="/js/anime.min.js"></script>
+
+    <link href="https://fonts.googleapis.com/css?family=Varela+Round&display=swap" rel="stylesheet">
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+    
+        <body>
+    <div id="blockpaint-container">
+        <canvas id="blockpaint-canvas" width="0" height="0" onmousedown="onMouseDown()" onmouseup="onMouseUp()"
+            onclick="onClick()"></canvas>
+        <div class="footer">Made by <a href="http://twitter.com/chulini" target="_blank">JQ</a> as bitcoin 11th birthday
+            challange from <a href="http://teamsatoshi.org/" target="_blank">Team Satoshi</a>.</div>
+    </div>
+
+    <!--img src="../images/team-satoshi.png" height="30" / -->
+</body>
+<script>
+    let w = window.innerWidth, h = window.innerHeight;
+    const gridResolution = 21;
+    let canvasSize;
+    let canvas = null;
+    let pointerShape = null;
+    let blockSizeInPixels;
+    let paintableBlockSize;
+    let illo;
+    let gameState = {
+        selectedColor: Math.floor(Math.random() * 16),
+        mouse: {
+            x: 0,
+            y: 0,
+            hover: null,
+            isPressed: false
+        },
+        blocksColors: null,
+        miningBlock: 0
+    };
+    let oldBlocksColors = [];
+    let mainBlockText;
+    let oldBlocksTexts = [];
+    let font;
+    let paintableBlocks;
+    let collisionables = [];
+    let colorSelector;
+    let hoveredPixel;
+    let ws;
+    const palette = ['#000000', '#1D2B53', '#7E2553', '#008751', '#AB5236', '#5F574F', '#C2C3C7', '#FFF1E8', '#FF004D', '#FFA300', '#FFEC27', '#00E436', '#29ADFF', '#83769C', '#FF77A8', '#FFCCAA'];
+
+
+    function draw() {
+        canvasSize = (window.innerWidth < window.innerHeight) ? window.innerWidth : window.innerHeight;
+        w = canvasSize;
+        h = canvasSize;
+        unit = w / 12.0;
+        if (canvas == null)
+            canvas = document.getElementById('blockpaint-canvas');
+
+        canvas.width = w;
+        canvas.height = h;
+
+        illo = new Zdog.Illustration({
+            element: '#blockpaint-canvas',
+            zoom: 1,
+            translate: { x: -w / 2.0, y: h / 2.0 }
+        });
+
+        Zfont.init(Zdog);
+        fontTitle = new Zdog.Font({
+            src: '../fonts/DancingScript.ttf'
+        });
+        new Zdog.Text({
+            addTo: illo,
+            font: fontTitle,
+            value: `BlockPaint`,
+            textAlign: 'center',
+            textBaseline: 'middle',
+            color: '#203858',
+            fontSize: unit * .8,
+            stroke: 1,
+            translate: { x: unit * 6, y: -unit * 11.6, z: 20 },
+            fill: true
+        })
+
+        font = new Zdog.Font({
+            src: '../fonts/VarelaRound-Regular.ttf'
+        });
+
+
+
+        mainBlockText = new Zdog.Text({
+            addTo: illo,
+            font: font,
+            value: `Mining Block #${gameState.miningBlock}`,
+            textAlign: 'center',
+            textBaseline: 'middle',
+            color: '#203858',
+            fontSize: unit * .2,
+            stroke: 1,
+            translate: { x: unit * 4.5, y: -unit * 8.55, z: 20 },
+            fill: true
+        })
+
+        hoveredPixel = new Zdog.Rect({
+            addTo: illo,
+            width: paintableBlockSize + 3,
+            height: paintableBlockSize + 3,
+            stroke: 3,
+            color: "#eee",
+            translate: translation(999, 999, 20)
+        });
+        hoveredPixel2 = new Zdog.Rect({
+            addTo: illo,
+            width: paintableBlockSize + 6,
+            height: paintableBlockSize + 6,
+            stroke: 3,
+            color: "#000",
+            translate: translation(999, 999, 20)
+        });
+
+        pointerShape = new Zdog.Rect({
+            addTo: illo,
+            width: 0,
+            height: 0,
+            stroke: 30,
+            color: "#000",
+            translate: translation(-999, -999, 10)
+        });
+        pointerShape.color = palette[gameState.selectedColor];
+        //console.log(`${JSON.stringify(gameState)}`);
+
+
+        blockSizeInPixels = parseInt(unit * 7.0);
+        paintableBlockSize = (blockSizeInPixels / gridResolution);
+
+        collisionables = [];
+        paintableBlocks = [];
+        for (let x = 0; x < gridResolution; x++) {
+            paintableBlocks[x] = [];
+            for (let y = 0; y < gridResolution; y++) {
+                const xPos = unit + (paintableBlockSize * .5) + (x * paintableBlockSize);
+                const yPos = unit + (paintableBlockSize * .5) + (y * paintableBlockSize);
+                const paintableBlockPosition = translation(xPos, yPos);
+                paintableBlocks[x][y] = new Zdog.Rect({
+                    addTo: illo,
+                    width: paintableBlockSize * 1.03,
+                    height: paintableBlockSize * 1.03,
+                    stroke: 0,//unit * .1,
+                    color: (gameState.blocksColors == null) ? palette[Math.floor(Math.random() * palette.length)] : palette[gameState.blocksColors[0][x][y]],
+                    fill: true,
+                    translate: paintableBlockPosition
+                });
+                collisionables.push({
+                    name: `paintable-${x}-${y}`,
+                    u: yPos + paintableBlocks[x][y].height * .5,
+                    r: xPos + paintableBlocks[x][y].width * .5,
+                    d: yPos - paintableBlocks[x][y].height * .5,
+                    l: xPos - paintableBlocks[x][y].width * .5,
+                    centerX: xPos,
+                    centerY: yPos,
+                    shape: paintableBlocks[x][y]
+                });
+                //console.log(collisionables[collisionables.length - 1]);
+
+            }
+        }
+
+        let colorPickers = [];
+        let colorPickerGridSize = { x: unit, y: (7.0 * unit) / 8 }
+        for (i = 0; i < 16; i++) {
+            let x = i % 2;
+            let y = parseInt(i / 2);
+            const xPos = (unit * 9) + (colorPickerGridSize.x * .5) + (x * colorPickerGridSize.x);
+            const yPos = (unit * 1) + (colorPickerGridSize.y * .5) + (y * colorPickerGridSize.y);
+            let colorPickerPosition = translation(xPos, yPos);
+            //console.log(colorPickerGridSize);
+
+            colorPickers[i] = new Zdog.Rect({
+                addTo: illo,
+                width: unit * .3,
+                height: 0,
+                stroke: colorPickerGridSize.x * .5,//unit * .1,
+                color: palette[i],
+                fill: true,
+                translate: colorPickerPosition
+            });
+
+            collisionables.push({
+                name: `colorpicker-${i}`,
+                u: yPos + (unit * .3 + colorPickerGridSize.x * .5) * .5,
+                r: xPos + (unit * .3 + colorPickerGridSize.x * .5) * .5,
+                d: yPos - (unit * .3 + colorPickerGridSize.x * .5) * .5,
+                l: xPos - (unit * .3 + colorPickerGridSize.x * .5) * .5,
+                centerX: xPos,
+                centerY: yPos,
+                shape: colorPickers[i]
+            });
+
+        }
+
+
+        let oldBlocksGridSize = { x: (unit * 10.0) / 6, y: unit * 2.0 }
+        // Draw old blocks
+        for (let i = 0; i < 6; i++) {
+            const xPos = (unit * .67) + oldBlocksGridSize.x * .5 + i * (oldBlocksGridSize.x + unit * .135);
+            const yPos = unit * 9.7;
+            //console.log(oldBlocksGridSize);
+
+            DrawSmallBlock(xPos, yPos, oldBlocksGridSize, i);
+        }
+
+        new Zdog.Shape({
+            addTo: illo,
+            path: [
+                {
+                    x: (unit * .67) + oldBlocksGridSize.x * .5,
+                    y: -unit * 9.7,
+                    z: -5
+                },
+                {
+                    x: (unit * .67) + oldBlocksGridSize.x * .5 + 5 * (oldBlocksGridSize.x + unit * .135),
+                    y: -unit * 9.7,
+                    z: -5
+                },
+            ],
+            stroke: unit * .1,
+            color: '#fff',
+        });
+
+
+        //console.log(getCollisionable(`colorpicker-${gameState.selectedColor}`).shape.translate);
+
+        colorSelector = new Zdog.Rect({
+            addTo: illo,
+            width: unit * .3,
+            height: 0,
+            stroke: colorPickerGridSize.x * .8,
+            color: '#555',
+            fill: true,
+            translate: getCollisionable(`colorpicker-${gameState.selectedColor}`).shape.translate
+        });
+        colorSelector.translate.z = -.5;
+
+
+        let paletteShape = new Zdog.Rect({
+            addTo: illo,
+            width: unit * 2,
+            height: unit * 7,
+            stroke: unit * .5,
+            color: "#fff",
+            fill: true,
+            translate: translation(10 * unit, 4.5 * unit, -10)
+        });
+
+        // Big Block BG
+        new Zdog.Rect({
+            addTo: illo,
+            width: unit * 7,
+            height: unit * 7,
+            stroke: unit * .5,
+            color: "#fff",
+            fill: true,
+            translate: translation(4.5 * unit, 4.5 * unit, -10)
+        });
+        new Zdog.Rect({
+            addTo: illo,
+            width: unit * 7,
+            height: unit * 7,
+            stroke: unit * .5,
+            color: "#6af",
+            fill: true,
+            translate: translation(4.55 * unit, 4.55 * unit, -20)
+        });
+        new Zdog.Rect({
+            addTo: illo,
+            width: unit * 7,
+            height: unit * 7,
+            stroke: unit * .5,
+            color: "#6af",
+            fill: true,
+            translate: translation(4.58 * unit, 4.58 * unit, -20)
+        });
+
+        illo.updateRenderGraph();
+        //console.log(`${w} x ${h}`);
+    }
+    function DrawSmallBlock(xPos, yPos, oldBlocksGridSize, blockIndex) {
+        new Zdog.Rect({
+            addTo: illo,
+            width: oldBlocksGridSize.x * .6,
+            height: oldBlocksGridSize.y * .6,
+            stroke: unit * .5,
+            color: "#fff",
+            fill: true,
+            translate: translation(xPos, yPos, 0)
+        });
+        new Zdog.Rect({
+            addTo: illo,
+            width: oldBlocksGridSize.x * .6,
+            height: oldBlocksGridSize.y * .6,
+            stroke: unit * .5,
+            color: "#6af",
+            fill: true,
+            translate: translation(xPos + unit * .05, yPos + unit * .05, -20)
+        });
+
+        oldBlocksTexts[blockIndex] = new Zdog.Text({
+            addTo: illo,
+            font: font,
+            value: `#${gameState.miningBlock - (6 - blockIndex)}`,
+            textAlign: 'center',
+            textBaseline: 'middle',
+            color: '#203858',
+            fontSize: unit * .15,
+            stroke: 1,
+            translate: { x: xPos, y: -yPos - unit * 1.05, z: 20 },
+            fill: true
+        });
+
+        oldBlocksColors[blockIndex] = [];
+        for (let x = 0; x < gridResolution; x++) {
+            oldBlocksColors[blockIndex][x] = [];
+            for (let y = 0; y < gridResolution; y++) {
+                const blockPosX = -(oldBlocksGridSize.x * .6) * (.54) + xPos + ((oldBlocksGridSize.x * .6) / gridResolution) + x * ((oldBlocksGridSize.x * .6) / gridResolution);
+                const blockPosY = -(oldBlocksGridSize.y * .6) * (.54) + yPos + ((oldBlocksGridSize.y * .6) / gridResolution) + y * ((oldBlocksGridSize.y * .6) / gridResolution);
+                oldBlocksColors[blockIndex][x][y] = new Zdog.Rect({
+                    addTo: illo,
+                    width: (oldBlocksGridSize.x * .7) / gridResolution,
+                    height: (oldBlocksGridSize.y * .7) / gridResolution,
+                    stroke: 0,
+                    color: (gameState.blocksColors == null) ? palette[Math.floor(Math.random() * palette.length)] : palette[gameState.blocksColors[6 - blockIndex][x][y]],
+                    fill: true,
+                    translate: translation(blockPosX, blockPosY, 1)
+                });
+            }
+        }
+
+    }
+    function RefreshAllBlocks() {
+
+
+        for (let i = 0; i < 6; i++) {
+            //oldBlocksText[i].value = gameState.miningBlock-(6 - i);
+            for (let x = 0; x < gridResolution; x++) {
+                for (let y = 0; y < gridResolution; y++) {
+                    //console.log(`oldBlocksColors.length ${oldBlocksColors.length} \t gameState.blocksColors.length ${gameState.blocksColors.length}`);
+                    oldBlocksColors[i][x][y].color = palette[gameState.blocksColors[6 - i][x][y]];
+                }
+            }
+        }
+
+        //mainBlockText.value = gameState.miningBlock;
+        for (let x = 0; x < gridResolution; x++) {
+            for (let y = 0; y < gridResolution; y++) {
+                paintableBlocks[x][y].color = palette[gameState.blocksColors[0][x][y]];
+            }
+        }
+    }
+
+
+
+    ///////////////// helper functions /////////////////////
+    function translation(x = 0, y = 0, z = 0) {
+        return { x: parseInt(x), y: parseInt(-y), z: parseInt(z) };
+    }
+    function map_range(value, low1, high1, low2, high2) {
+        return low2 + (high2 - low2) * (value - low1) / (high1 - low1);
+    }
+    Number.prototype.clamp = function (min, max) {
+        return Math.min(Math.max(this, min), max);
+    };
+    function getCollisionable(name) {
+        for (let i = 0; i < collisionables.length; i++) {
+            if (collisionables[i].name === name)
+                return collisionables[i];
+        }
+        return null;
+    }
+    function lerp(v0, v1, t) {
+        return v0 * (1 - t) + v1 * t
+    }
+    ///////////////// window callbacks /////////////////////
+
+    function onClick() {
+        if (gameState.mouse.hover == null)
+            return;
+
+        for (let i = 0; i < 16; i++) {
+            if (gameState.mouse.hover.name == `colorpicker-${i}`) {
+
+                gameState.selectedColor = i;
+
+                pointerShape.color = palette[gameState.selectedColor];
+
+                let selectedColorPicker = getCollisionable(`colorpicker-${gameState.selectedColor}`);
+                colorSelector.translate = translation(selectedColorPicker.centerX, selectedColorPicker.centerY, -1);
+                illo.updateRenderGraph();
+            }
+        }
+
+        for (let x = 0; x < gridResolution; x++) {
+            for (let y = 0; y < gridResolution; y++) {
+                if (gameState.mouse.hover.name === `paintable-${x}-${y}`) {
+                    //console.log(gameState.mouse.hover.name + ' clicked!');
+                    //console.log(`> colorchange|${x}|${y}|${gameState.selectedColor}`);
+                    //console.log(JSON.stringify(gameState.blocksColors));
+                    
+                    if (gameState.blocksColors != null && gameState.selectedColor != gameState.blocksColors[0][x][y]) {
+                        document.body.style.cursor = 'url("../images/pickaxe_on.png"),auto';
+                        setTimeout(() => {
+                            RefreshCursorFromHovered();
+                        }, 100);
+                        websocket.send(`colorchange|${x}|${y}|${gameState.selectedColor}`)
+                    }
+                }
+            }
+        }
+
+    }
+
+
+    function handleMouseMove(event) {
+        let eventDoc, doc, body;
+        event = event || window.event;
+        if (event.pageX == null && event.clientX != null) {
+            eventDoc = (event.target && event.target.ownerDocument) || document;
+            doc = eventDoc.documentElement;
+            body = eventDoc.body;
+
+            event.pageX = event.clientX +
+                (doc && doc.scrollLeft || body && body.scrollLeft || 0) -
+                (doc && doc.clientLeft || body && body.clientLeft || 0);
+            event.pageY = event.clientY +
+                (doc && doc.scrollTop || body && body.scrollTop || 0) -
+                (doc && doc.clientTop || body && body.clientTop || 0);
+        }
+        let marginX = (window.innerWidth > w) ? parseInt((window.innerWidth - w) / 2) : 0;
+        let marginY = (window.innerHeight > h) ? parseInt((window.innerHeight - h) / 2) : 0;
+        gameState.mouse.x = event.pageX - marginX;//event.pageX.clamp(marginX,window.innerWidth-marginX);// (-1.0 + 2.0 * (event.pageX / w)) * .9;
+        gameState.mouse.y = window.innerHeight - event.pageY - marginY;// (-1.0 + 2.0 * (event.pageY / h)) * .7;
+        let newHovered = getHovered();
+        if (gameState.mouse.hover != newHovered) {
+            gameState.mouse.hover = newHovered;
+            RefreshCursorFromHovered();
+            if (gameState.mouse.isPressed) {
+                onClick();
+            }
+        }
+
+
+        //pointerShape.translate = translation(gameState.mouse.x, gameState.mouse.y, 10);
+        //illo.updateRenderGraph();
+        //console.log(`${mouseX} , ${mouseY}`);
+    }
+    function getHovered() {
+        for (let i = 0; i < collisionables.length; i++) {
+
+            if (gameState.mouse.x > collisionables[i].l
+                && gameState.mouse.x < collisionables[i].r
+                && gameState.mouse.y > collisionables[i].d
+                && gameState.mouse.y < collisionables[i].u) {
+                return collisionables[i];
+            }
+        }
+        return null;
+    }
+    function RefreshCursorFromHovered() {
+        if (gameState.mouse.hover == null) {
+            document.body.style.cursor = 'default';
+
+        }
+        else if (gameState.mouse.hover.name.includes('paintable')) {
+            document.body.style.cursor = 'url("../images/pickaxe_off.png"),auto';
+
+        }
+        else if (gameState.mouse.hover.name.includes('colorpicker')) {
+            document.body.style.cursor = 'url("../images/color-picker3.png"),auto';
+        }
+        else {
+            document.body.style.cursor = 'default';
+        }
+
+        if (gameState.mouse.hover != null
+            && gameState.mouse.hover.name.includes('paintable')) {
+            hoveredPixel.translate = {
+                x: gameState.mouse.hover.shape.translate.x,
+                y: gameState.mouse.hover.shape.translate.y,
+                z: 20
+            }
+            hoveredPixel2.translate = {
+                x: gameState.mouse.hover.shape.translate.x,
+                y: gameState.mouse.hover.shape.translate.y,
+                z: 19
+            }
+            illo.updateRenderGraph();
+        }
+        else {
+            hoveredPixel.translate = {
+                x: 999,
+                y: 999,
+                z: 20
+            }
+            hoveredPixel2.translate = {
+                x: 999,
+                y: 999,
+                z: 19
+            }
+            illo.updateRenderGraph();
+        }
+    }
+    function onMouseDown() {
+        gameState.mouse.isPressed = true;
+        onClick();
+    }
+    function onMouseUp() {
+        gameState.mouse.isPressed = false;
+    }
+
+    window.onload = function () {
+        document.onmousemove = handleMouseMove;
+        center = { x: w / 2.0, y: h / 2.0 };
+        draw();
+
+
+
+        websocket = new WebSocket('ws://35.158.139.97:5000');//ws://35.158.139.97:5000 localhost
+        websocket.onopen = function (evt) { onOpen(evt) };
+        websocket.onclose = function (evt) { onClose(evt) };
+        websocket.onmessage = function (evt) { onMessage(evt) };
+        websocket.onerror = function (evt) { onError(evt) };
+    }
+    function onOpen(evt) {
+        console.log("CONNECTED");
+        websocket.send("hello");
+        setInterval(() => {
+            websocket.send("ping");
+        }, 1000);
+    }
+    function onClose(evt) {
+        console.log("DISCONNECTED");
+    }
+
+    function onMessage(evt) {
+        //console.log('< ' + evt.data);
+        let msgSplit = evt.data.split('|');
+
+        if (msgSplit[0] === 'allcolors') {
+            gameState.blocksColors = JSON.parse(msgSplit[1]);
+            gameState.miningBlock = parseInt(msgSplit[2]);
+            draw();
+            illo.updateRenderGraph();
+
+            //console.log(JSON.stringify(gameState.blocksColors));
+
+            RefreshAllBlocks();
+        }
+        else if (msgSplit[0] === 'colorchange') {
+            //console.log(`< ${evt.data}`);
+            const x = parseInt(msgSplit[1]);
+            const y = parseInt(msgSplit[2]);
+            const newColor = parseInt(msgSplit[3]);
+            gameState.blocksColors[0][x][y] = newColor;
+            paintableBlocks[x][y].color = palette[newColor];
+            illo.updateRenderGraph();
+        }
+    }
+
+    function onError(evt) {
+        console.log('<span style="color: red;">ERROR:</span> ' + evt.data);
+    }
+
+    window.onresize = function (event) {
+        draw();
+        center = { x: w / 2.0, y: h / 2.0 };
+    };
+</script>
+<style>
+    #blockpaint-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(#89f7fe, #66a6ff);
+        background: -moz-linear-gradient(top, #89f7fe, #66a6ff);
+        background: -webkit-gradient(linear, left top, left bottom, from(#89f7fe), to(#66a6ff));
+        filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#89f7fe', endColorstr='#66a6ff');
+        background: -o-linear-gradient(rgb(137, 247, 254), rgb(102, 166, 255));
+    }
+
+    #blockpaint-canvas {
+        background: transparent;
+        margin: 0 0 0 0;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        -ms-transform: translate(-50%, -50%);
+        transform: translate(-50%, -50%);
+    }
+
+    .footer {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 30px;
+        background: #203858;
+        text-align: center;
+        font-family: 'Varela Round', sans-serif;
+        font-size: 12px;
+        line-height: 30px;
+        color: #fff
+    }
+
+    .footer a {
+        color: #fff;
+        font-weight: bold;
+        text-decoration: underline;
+    }
+</style>
+    
+
+</html>

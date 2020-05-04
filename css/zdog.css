@@ -1,0 +1,52 @@
+#canvas-container{  
+    margin: 0 0 0 0;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    -ms-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+    
+}
+.zdog-canvas {
+    background: transparent;/*#000;*/
+    height: 450px;
+    margin:0 auto;
+    z-index: 0;
+}
+#home-pointer{
+    position: absolute;
+    display: none;
+    z-index: 10;
+    top: 10px;
+    left: 10px;
+}
+.fade {
+    -webkit-animation: fade 2.7s infinite;
+    animation: fade 2.7s infinite;
+    -moz-animation: fade 2.7s infinite;
+    -o-animation: fade 2.7s infinite;
+}
+
+@-webkit-keyframes fade {
+    0% {opacity: 0} 
+    50% {opacity: .7}
+    100% {opacity:0}
+}
+
+@-moz-keyframes fade{
+    0% {opacity: 0} 
+    50% {opacity: .7}
+    100% {opacity:0}  
+}
+
+@keyframes fade {
+    0% {opacity: 0} 
+    50% {opacity: .7}
+    100%{opacity: 0}
+}
+@-o-keyframes fade {
+    0% {opacity: 0} 
+    50% {opacity: .7}
+    100%{opacity: 0}
+    
+}

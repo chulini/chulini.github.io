@@ -1,0 +1,317 @@
+/*
+Colors:
+#fc0 //Orange
+#fee //Cream
+#555 //gray
+#f55 //red
+#025492 //Blue
+*/
+body{
+  font-family: 'Vollkorn', serif;
+  background: #fee;
+  color: #555;
+}
+.top-band{
+  position: absolute;
+  width: 100%;
+  height: 60px;
+  top:0;
+  left:0;
+  background: #f55;
+  z-index: -1;
+}
+
+.wrap{
+  max-width: 700px;
+  margin: 0 auto;
+}
+header {
+  max-width: 700px;
+  min-height:60px;
+  /*padding: 20px 100px;*/
+  font-family: 'Vollkorn', serif;
+  display:block;
+  background-color: #f55;
+}
+header .nav-list{
+  float: right;
+  
+}
+
+header .nav-list-item
+{
+  display: inline-block;
+  padding: 19px 10px;
+}
+header .nav-list-item a{
+  font-size: 1em;
+  line-height: 1.4;
+  text-decoration: none;
+  color: #fc0;
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+header .nav-list-item a:hover
+{
+  border-bottom: 3px dotted #fc0;
+}
+header .current a
+{
+  border-bottom: 3px solid #fc0;
+}
+.header-link-home{
+  float:left;
+}
+.header-link-home img{
+  height: 60px;
+  float: left;
+}
+h1 .header-link-home {
+  line-height: 60px;
+  float: left;
+  margin: 0 30px;
+  font-size: 2em;
+  color: #777;
+  font-weight: bold;
+  text-decoration: none;
+}
+.middle{
+  max-width: 700px;
+  margin: 20px auto;
+  padding: 0 20px;
+  min-height: calc(100vh - 137px);
+  position: relative;
+}
+video{
+  width: 100%;
+}
+
+@media screen and (max-width: 700px)
+{
+  .wrap{
+    width: inherit;
+    margin:0;
+  }
+  .middle{
+    min-height: calc(100vh - 197px);
+  }
+  header{
+    min-width: inherit;
+    height: 120px;
+    display:block;
+    text-align: center;
+  }
+  header .header-link-home{
+    margin:0 auto;
+    text-align: center;
+    
+    float:none;
+  }
+  header .header-link-home img{
+    float:none;
+    display: block;
+    margin:0 auto;
+  }
+  header h1{
+    display:inline;
+  }
+  /*h1 .header-link-home {
+    float: none;
+    display:inline-block;
+  }*/
+  header .nav-list{
+    width:100%;
+    display: block;
+  }
+}
+
+.post-content{
+  margin: 0 0px 40px 0px;
+  font-family: 'Vollkorn', serif;
+}
+.post-separator{
+  border-top: 1px dotted #f55;
+  padding: 30px 0 0 0;
+}
+.post-content img{
+  max-width: 100%;
+  display: block;
+  margin: 0 auto;
+}
+.post-border{
+  border-left: 1px dotted #f55;
+  padding: 0 0 0 20px;
+}
+a{
+  color: #333;
+}
+.post-content h2.title {  
+  padding: 10px 0;
+  margin: 0;
+  font-family: 'Vollkorn', serif;
+}
+.post-content h2.title a, .games h2 a{
+  color: #f55;
+  font-size: 2em;
+  text-decoration: none;
+  letter-spacing: 0.5px;
+  font-family: 'Vollkorn', serif;
+
+}
+h2 a:hover{
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+.post-content{
+  font-family: 'Vollkorn', serif;
+}
+p strong{
+  font-weight: bold;
+}
+p emph
+{
+  font-style: italic;
+}
+p a{
+  font-weight: bold;
+}
+p{
+  line-height: 1.6em;
+}
+.post-content p, .post-content ul, .post-content ol, .post-content li{
+  margin: 20px 0 20px 0;
+  font-size: 20px;
+  letter-spacing: 0.1px;
+  word-spacing: 2px;
+}
+p.date{
+  background-color: #fc0;
+  display: inline;
+  padding: 2px 5px 0px 5px;
+}
+p code, ul code, ol code{
+  background-color: #fff;
+  color: #333;
+  font-weight: bold;
+}
+.post-content h1{
+  font-size: 1.8em;
+  margin: 65px 0px 15px 0;
+  font-weight: bold;
+  letter-spacing: 1px;
+  font-family: 'Varela Round', serif;
+}
+.post-content h2{
+  font-size: 1.4em;
+  margin: 45px 0px 15px 0;
+  font-weight: bold;
+  letter-spacing: 1px;
+  font-family: 'Varela Round', serif;
+}
+.post-content ul{
+  list-style-type: square;
+  margin: 10px 0 20px 40px;
+}
+.post-content ol{
+  list-style-type: decimal;
+  margin: 10px 0 20px 40px;
+}
+
+.join {
+  margin: 20px 0;
+  padding: 36px 41px 77px 70px;
+  position: relative;
+  display: block;
+}
+.join-bg{
+  width: 100%; 
+  height: 100%; 
+  position: absolute; 
+  left: 0px; 
+  top: 0px; 
+  z-index: -1;
+}
+.join-content{
+  margin:0px auto;
+  display: flex;
+}
+.join-left{
+  flex:1;
+  text-align: center;
+}
+.join-left img{
+  max-width: 50px;
+}
+.join-middle{
+  flex: initial;
+  width: 2px;
+  background: #f55;
+  margin: 0 30px;
+}
+.join-right{
+  flex: .6;
+  text-align: center;
+}
+.join-discord{
+  height: 100px;
+}
+.join h2{
+  font-family: 'Source Code Pro', monospace;
+  color: #025492;
+  font-weight: bold;
+  margin: 0 0 20px 0;
+  line-height: 30px;
+}
+.join h2 a:hover, p a:hover, .post-content .title a:hover{
+  background: #f55;
+  color: #fc0;
+  text-decoration: none;
+}
+.join p{
+  font-family: 'Source Code Pro', monospace;
+  font-size: .8em;
+}
+.footer{
+  width:100%;
+  padding: 10px 0;
+  font-family: 'Source Code Pro', monospace;
+  background-color:#2d2d2d/* #2d2d2d;*/  
+}
+html{
+  min-height:100%;/* make sure it is at least as tall as the viewport */
+  position:relative;
+}
+body{
+  height:100%; /* force the BODY element to match the height of the HTML element */
+}
+
+.footer p{
+  color:#c5c8c6;
+  font-size: .7em;
+  text-align: center;
+  padding: 0 10px;
+  margin:0;
+}
+.footer p a{
+  color:#fff;
+}
+p a{
+  color: #025492;
+}
+.games{
+  /* display:flex; */
+}
+.games img{
+  width: 250px;
+  margin: 0 15px 0 0;
+  float:left;
+}
+/* .games .games-description{
+  margin:0 auto auto 15px;
+}  */
+.games h1{
+  margin: 15px 0px 15px 0;
+}
+
+/* Anybody can paint the block being mined. After that (10 minutes in average). The drawing will be in history and not be updated anymore.
+Made as a web experiment for the bitcoin 11th birthday challange from [Team Satoshi](http://teamsatoshi.org/). */
